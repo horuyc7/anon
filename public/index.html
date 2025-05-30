@@ -1,13 +1,97 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Anonymous Chat</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f2f5;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      max-width: 600px;
+      margin: auto;
+      height: 100vh;
+      background: white;
+      border-left: 1px solid #ccc;
+      border-right: 1px solid #ccc;
+    }
+
+    .messages {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      max-width: 80%;
+      margin-bottom: 10px;
+      padding: 10px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .message.sent {
+      align-self: flex-end;
+      background-color: #dcf8c6;
+    }
+
+    .message.received {
+      align-self: flex-start;
+      background-color: #e5e5ea;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 10px;
+      border-top: 1px solid #ccc;
+    }
+
+    .chat-input input {
+      flex-grow: 1;
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      outline: none;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #0084ff;
+      color: white;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .chat-input button:hover {
+      background-color: #0071e3;
+    }
+  </style>
 </head>
 <body>
-  <ul id="messages"></ul>
-  <form id="form">
-    <input id="input" autocomplete="off" placeholder="Say something..." /><button>Send</button>
-  </form>
+  <div class="chat-container">
+    <div id="messages" class="messages"></div>
+    <form id="form" class="chat-input">
+      <input id="input" autocomplete="off" placeholder="Type your message..." />
+      <button>Send</button>
+    </form>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -16,20 +100,36 @@
     const input = document.getElementById('input');
     const messages = document.getElementById('messages');
 
+    // Track which messages were sent by this user
+    const sentMessages = new Set();
+
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      if (input.value) {
-        socket.emit('chat message', input.value);
+      if (input.value.trim()) {
+        const msg = input.value.trim();
+        socket.emit('chat message', msg);
+        addMessage(msg, 'sent');
         input.value = '';
       }
     });
 
     socket.on('chat message', function(msg) {
-      const item = document.createElement('li');
-      item.textContent = msg;
-      messages.appendChild(item);
-      window.scrollTo(0, document.body.scrollHeight);
+      if (!sentMessages.has(msg)) {
+        addMessage(msg, 'received');
+      }
     });
+
+    function addMessage(text, type) {
+      const message = document.createElement('div');
+      message.classList.add('message', type);
+      message.textContent = text;
+      messages.appendChild(message);
+      messages.scrollTop = messages.scrollHeight;
+
+      if (type === 'sent') {
+        sentMessages.add(text);
+      }
+    }
   </script>
 </body>
 </html>
